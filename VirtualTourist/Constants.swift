@@ -20,6 +20,7 @@ struct Constants {
         static let SearchBBoxHalfHeight = 1.0
         static let SearchLatRange = (-90.0, 90.0)
         static let SearchLonRange = (-180.0, 180.0)
+        static let maxPages = 40
     }
     
     // MARK: Flickr Parameter Keys
@@ -47,6 +48,7 @@ struct Constants {
         static let GalleryID = "5704-72157622566655097"
         static let MediumURL = "url_m"
         static let UseSafeSearch = "1"
+        static let SquareURL = "url_sq"
     }
     
     // MARK: Flickr Response Keys

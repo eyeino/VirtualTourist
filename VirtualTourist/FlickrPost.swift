@@ -10,13 +10,21 @@ import Foundation
 import Freddy
 
 public struct FlickrPost {
-    public let title: String
+    //public let title: String
     public let squareURL: String
+}
+
+//singleton
+public struct FlickrPosts {
+    static let sharedInstance = FlickrPosts()
+    private init() {}
+    
+    public var list = [FlickrPost]()
 }
 
 extension FlickrPost: JSONDecodable {
     public init(json value: JSON) throws {
-        title = try value.string(Constants.FlickrResponseKeys.Title)
+        //title = try value.string(Constants.FlickrResponseKeys.Title)
         squareURL = try value.string(Constants.FlickrResponseKeys.SquareURL)
     }
 }
