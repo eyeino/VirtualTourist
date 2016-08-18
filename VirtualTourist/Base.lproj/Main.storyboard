@@ -3,6 +3,7 @@
     <dependencies>
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="10085"/>
+        <capability name="Constraints to layout margins" minToolsVersion="6.0"/>
     </dependencies>
     <scenes>
         <!--Virtual Tourist-->
@@ -71,23 +72,44 @@
                             <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="aFC-Br-pEx">
                                 <rect key="frame" x="0.0" y="184" width="600" height="372"/>
                                 <collectionViewFlowLayout key="collectionViewLayout" minimumLineSpacing="10" minimumInteritemSpacing="10" id="kvx-Oo-33Z">
-                                    <size key="itemSize" width="108" height="95"/>
+                                    <size key="itemSize" width="166" height="163"/>
                                     <size key="headerReferenceSize" width="0.0" height="0.0"/>
                                     <size key="footerReferenceSize" width="0.0" height="0.0"/>
                                     <inset key="sectionInset" minX="0.0" minY="0.0" maxX="0.0" maxY="0.0"/>
                                 </collectionViewFlowLayout>
                                 <cells>
-                                    <collectionViewCell opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" reuseIdentifier="photoCell" id="Tz3-rp-18H">
-                                        <rect key="frame" x="0.0" y="0.0" width="108" height="95"/>
+                                    <collectionViewCell opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" reuseIdentifier="photoCell" id="Tz3-rp-18H" customClass="PhotoCollectionViewCell" customModule="VirtualTourist" customModuleProvider="target">
+                                        <rect key="frame" x="0.0" y="0.0" width="166" height="163"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                         <view key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center">
-                                            <rect key="frame" x="0.0" y="0.0" width="108" height="95"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="166" height="163"/>
                                             <autoresizingMask key="autoresizingMask"/>
+                                            <subviews>
+                                                <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="3X6-2p-GVz">
+                                                    <rect key="frame" x="9" y="9" width="148" height="145"/>
+                                                </imageView>
+                                                <activityIndicatorView hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" hidesWhenStopped="YES" style="whiteLarge" translatesAutoresizingMaskIntoConstraints="NO" id="tWk-pu-Ky6">
+                                                    <rect key="frame" x="65" y="63" width="37" height="37"/>
+                                                </activityIndicatorView>
+                                            </subviews>
                                             <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                                         </view>
+                                        <constraints>
+                                            <constraint firstItem="3X6-2p-GVz" firstAttribute="top" secondItem="Tz3-rp-18H" secondAttribute="topMargin" constant="1" id="14e-cp-y3S"/>
+                                            <constraint firstItem="tWk-pu-Ky6" firstAttribute="centerY" secondItem="Tz3-rp-18H" secondAttribute="centerY" id="KVv-By-Lni"/>
+                                            <constraint firstAttribute="bottomMargin" secondItem="3X6-2p-GVz" secondAttribute="bottom" constant="1" id="XQt-2d-3k1"/>
+                                            <constraint firstItem="tWk-pu-Ky6" firstAttribute="centerX" secondItem="Tz3-rp-18H" secondAttribute="centerX" id="cxB-KU-7CK"/>
+                                            <constraint firstItem="3X6-2p-GVz" firstAttribute="leading" secondItem="Tz3-rp-18H" secondAttribute="leadingMargin" constant="1" id="jeP-j2-ea2"/>
+                                            <constraint firstAttribute="trailingMargin" secondItem="3X6-2p-GVz" secondAttribute="trailing" constant="1" id="pZi-BH-b4X"/>
+                                        </constraints>
+                                        <connections>
+                                            <outlet property="imageView" destination="3X6-2p-GVz" id="Y3W-Kg-L6h"/>
+                                            <outlet property="loadingIndicator" destination="tWk-pu-Ky6" id="vgc-Fq-1Nv"/>
+                                        </connections>
                                     </collectionViewCell>
                                 </cells>
                                 <connections>
+                                    <outlet property="dataSource" destination="pSz-sT-ZT4" id="woq-nQ-hpS"/>
                                     <outlet property="delegate" destination="pSz-sT-ZT4" id="Q0e-6a-xfK"/>
                                 </connections>
                             </collectionView>
@@ -117,6 +139,7 @@
                     </view>
                     <navigationItem key="navigationItem" title="Photos" id="7qu-Eq-HOW"/>
                     <connections>
+                        <outlet property="collectionView" destination="aFC-Br-pEx" id="aMn-hG-Nu0"/>
                         <outlet property="mapView" destination="zuL-Vc-WS1" id="OON-wL-Ie2"/>
                     </connections>
                 </viewController>

@@ -16,6 +16,7 @@
 		3C2DEBF71D65446C0077BE89 /* Pin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C2DEBF31D65446C0077BE89 /* Pin.swift */; };
 		3C2DEBF81D65446C0077BE89 /* Photo+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C2DEBF41D65446C0077BE89 /* Photo+CoreDataProperties.swift */; };
 		3C2DEBF91D65446C0077BE89 /* Photo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C2DEBF51D65446C0077BE89 /* Photo.swift */; };
+		3C2DEBFB1D655EEF0077BE89 /* PhotoCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C2DEBFA1D655EEF0077BE89 /* PhotoCollectionViewCell.swift */; };
 		3C7B8DBA1D64C0D700B4F390 /* FlickrPost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C7B8DB91D64C0D700B4F390 /* FlickrPost.swift */; };
 		3C7B8DBC1D64C40600B4F390 /* DeveloperSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C7B8DBB1D64C40600B4F390 /* DeveloperSettings.swift */; };
 		3CB60BD31D63E460000F93EB /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CB60BD21D63E460000F93EB /* AppDelegate.swift */; };
@@ -71,6 +72,7 @@
 		3C2DEBF31D65446C0077BE89 /* Pin.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Pin.swift; sourceTree = "<group>"; };
 		3C2DEBF41D65446C0077BE89 /* Photo+CoreDataProperties.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "Photo+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		3C2DEBF51D65446C0077BE89 /* Photo.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Photo.swift; sourceTree = "<group>"; };
+		3C2DEBFA1D655EEF0077BE89 /* PhotoCollectionViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PhotoCollectionViewCell.swift; sourceTree = "<group>"; };
 		3C7B8DB91D64C0D700B4F390 /* FlickrPost.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FlickrPost.swift; sourceTree = "<group>"; };
 		3C7B8DBB1D64C40600B4F390 /* DeveloperSettings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DeveloperSettings.swift; sourceTree = "<group>"; };
 		3CB60BCF1D63E460000F93EB /* VirtualTourist.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VirtualTourist.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -206,6 +208,7 @@
 		3CB60C011D63E980000F93EB /* View */ = {
 			isa = PBXGroup;
 			children = (
+				3C2DEBFA1D655EEF0077BE89 /* PhotoCollectionViewCell.swift */,
 			);
 			name = View;
 			sourceTree = "<group>";
@@ -527,6 +530,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3C2DEBF91D65446C0077BE89 /* Photo.swift in Sources */,
+				3C2DEBFB1D655EEF0077BE89 /* PhotoCollectionViewCell.swift in Sources */,
 				3CB60C081D63EAA1000F93EB /* HomeMapViewController.swift in Sources */,
 				3C2DEBF61D65446C0077BE89 /* Pin+CoreDataProperties.swift in Sources */,
 				3CB60BD31D63E460000F93EB /* AppDelegate.swift in Sources */,

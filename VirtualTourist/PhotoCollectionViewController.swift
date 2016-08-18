@@ -16,6 +16,7 @@ import Freddy
 class PhotoCollectionViewController: UIViewController, UICollectionViewDelegate, MKMapViewDelegate {
     
     @IBOutlet weak var mapView: MKMapView!
+    @IBOutlet weak var collectionView: UICollectionView!
     
     var lat: Double = 34.6937
     var lon: Double = 135.5022
@@ -26,6 +27,14 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDelegate,
     var numberOfPhotos: Int?
     
     let reusableIdentifier = "photoCell"
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        //registerCollectionViewCells()
+        
+        getFlickrPages(lat, longitude: lon)
+    }
     
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
@@ -43,8 +52,6 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDelegate,
     
     override func viewDidAppear(animated: Bool) {
         super.viewDidAppear(animated)
-        
-        
     }
     
     private func getFlickrPages(latitude: Double, longitude: Double) {
@@ -58,7 +65,6 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDelegate,
             Constants.FlickrParameterKeys.Format: Constants.FlickrParameterValues.ResponseFormat,
             Constants.FlickrParameterKeys.NoJSONCallback: Constants.FlickrParameterValues.DisableJSONCallback
         ]
-        
         
         Alamofire.request(.GET, flickrURL(), parameters: methodParameters) .responseJSON { response in
             if let data = response.data {
@@ -89,7 +95,6 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDelegate,
             Constants.FlickrParameterKeys.NoJSONCallback: Constants.FlickrParameterValues.DisableJSONCallback
         ]
         
-        
         Alamofire.request(.GET, flickrURL(), parameters: methodParameters) .responseJSON { response in
             if let data = response.data {
                 do {
@@ -99,6 +104,10 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDelegate,
                     for post in posts {
                         self.posts.append(post)
                     }
+                    
+                    dispatch_async(dispatch_get_main_queue(), { 
+                        self.collectionView.reloadData()
+                    })
                     
                 } catch {
                     print("Error with parsing JSON. (latlonpage request)")
@@ -136,14 +145,22 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDelegate,
     }
     
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCellWithReuseIdentifier(reusableIdentifier, forIndexPath: indexPath)
-        let imageURLString = posts[indexPath.row].squareURL
-        
-
-        
-        //cell.backgroundView = UIImageView(image: meme.memedImage)
-        cell.backgroundView?.contentMode = .ScaleAspectFit
+        let cell = collectionView.dequeueReusableCellWithReuseIdentifier(reusableIdentifier, forIndexPath: indexPath) as! PhotoCollectionViewCell
+        cell.configure(posts[indexPath.row])
         return cell
     }
     
+    func registerCollectionViewCells() {
+        collectionView?.registerNib(UINib(nibName: "PhotoCollectionViewCell", bundle: nil), forCellWithReuseIdentifier: reusableIdentifier)
+    }
+    
+}
+
+extension PhotoCollectionViewController: UICollectionViewDelegateFlowLayout {
+    func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAtIndexPath indexPath: NSIndexPath) -> CGSize {
+        //let spacing: CGFloat = 1
+        let itemWidth = (view.bounds.size.width / 2)// - (spacing / 2)
+        let itemHeight = itemWidth
+        return CGSize(width: itemWidth, height: itemHeight)
+    }
 }
