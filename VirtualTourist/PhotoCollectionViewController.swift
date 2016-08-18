@@ -92,10 +92,6 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDelegate,
     
     private func getFlickrPosts(latitude: Double, longitude: Double, withPageNumber: Int) {
         
-        print("Random page number: \(withPageNumber)")
-        print("Posts in posts array: \(posts.count)")
-        
-        
         let methodParameters = [
             Constants.FlickrParameterKeys.Method: Constants.FlickrParameterValues.SearchMethod,
             Constants.FlickrParameterKeys.APIKey: Constants.FlickrParameterValues.APIKey,
@@ -108,17 +104,15 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDelegate,
         ]
         
         Alamofire.request(.GET, flickrURL(), parameters: methodParameters) .responseJSON { response in
+            
             if let data = response.data {
                 do {
                     let json = try JSON(data: data)
                     let posts = try json.array(Constants.FlickrResponseKeys.Photos, Constants.FlickrResponseKeys.Photo).map(FlickrPost.init)
                     
-                    self.posts = []
-                    
-                    for post in posts {
-                        self.posts.append(post)
-                    }
                     dispatch_async(dispatch_get_main_queue(), {
+                        
+                        self.posts = posts
                         
                         if posts.isEmpty {
                             self.textLabel.hidden = false
