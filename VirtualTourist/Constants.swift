@@ -48,7 +48,7 @@ struct Constants {
         static let GalleryID = "5704-72157622566655097"
         static let MediumURL = "url_m"
         static let UseSafeSearch = "1"
-        static let SquareURL = "url_sq"
+        static let SquareURL = "url_q"
     }
     
     // MARK: Flickr Response Keys
@@ -60,7 +60,7 @@ struct Constants {
         static let MediumURL = "url_m"
         static let Pages = "pages"
         static let Total = "total"
-        static let SquareURL = "url_sq"
+        static let SquareURL = "url_q"
     }
     
     // MARK: Flickr Response Values

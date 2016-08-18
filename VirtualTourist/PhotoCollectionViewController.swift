@@ -16,7 +16,9 @@ import Freddy
 class PhotoCollectionViewController: UIViewController, UICollectionViewDelegate, MKMapViewDelegate {
     
     @IBOutlet weak var mapView: MKMapView!
+    @IBOutlet weak var textLabel: UILabel!
     @IBOutlet weak var collectionView: UICollectionView!
+    @IBOutlet weak var refreshCollectionButton: UIBarButtonItem!
     
     var lat: Double = 34.6937
     var lon: Double = 135.5022
@@ -30,10 +32,7 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDelegate,
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         //registerCollectionViewCells()
-        
-        getFlickrPages(lat, longitude: lon)
     }
     
     override func viewWillAppear(animated: Bool) {
@@ -47,6 +46,11 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDelegate,
         let regionRadius: CLLocationDistance = 1000
         let coordinateRegion = MKCoordinateRegionMakeWithDistance(annotation.coordinate, regionRadius * 2.0, regionRadius * 2.0)
         mapView.setRegion(coordinateRegion, animated: true)
+        
+        refreshCollectionButton.enabled = false
+        textLabel.hidden = true
+        
+        getFlickrPages(lat, longitude: lon)
     }
     
     
@@ -74,6 +78,9 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDelegate,
                     
                     let pageLimit = min(pages, Constants.Flickr.maxPages)
                     let randomPage = Int(arc4random_uniform(UInt32(pageLimit))) + 1
+                    
+                    self.numberOfPages = pageLimit
+                    
                     self.getFlickrPosts(latitude, longitude: longitude, withPageNumber: randomPage)
                     
                 } catch {
@@ -85,6 +92,10 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDelegate,
     
     private func getFlickrPosts(latitude: Double, longitude: Double, withPageNumber: Int) {
         
+        print("Random page number: \(withPageNumber)")
+        print("Posts in posts array: \(posts.count)")
+        
+        
         let methodParameters = [
             Constants.FlickrParameterKeys.Method: Constants.FlickrParameterValues.SearchMethod,
             Constants.FlickrParameterKeys.APIKey: Constants.FlickrParameterValues.APIKey,
@@ -92,7 +103,8 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDelegate,
             Constants.FlickrParameterKeys.SafeSearch: Constants.FlickrParameterValues.UseSafeSearch,
             Constants.FlickrParameterKeys.Extras: Constants.FlickrParameterValues.SquareURL,
             Constants.FlickrParameterKeys.Format: Constants.FlickrParameterValues.ResponseFormat,
-            Constants.FlickrParameterKeys.NoJSONCallback: Constants.FlickrParameterValues.DisableJSONCallback
+            Constants.FlickrParameterKeys.NoJSONCallback: Constants.FlickrParameterValues.DisableJSONCallback,
+            Constants.FlickrParameterKeys.Page: String(withPageNumber)
         ]
         
         Alamofire.request(.GET, flickrURL(), parameters: methodParameters) .responseJSON { response in
@@ -101,11 +113,20 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDelegate,
                     let json = try JSON(data: data)
                     let posts = try json.array(Constants.FlickrResponseKeys.Photos, Constants.FlickrResponseKeys.Photo).map(FlickrPost.init)
                     
+                    self.posts = []
+                    
                     for post in posts {
                         self.posts.append(post)
                     }
-                    
-                    dispatch_async(dispatch_get_main_queue(), { 
+                    dispatch_async(dispatch_get_main_queue(), {
+                        
+                        if posts.isEmpty {
+                            self.textLabel.hidden = false
+                        } else {
+                            self.textLabel.hidden = true
+                        }
+                        
+                        self.refreshCollectionButton.enabled = true
                         self.collectionView.reloadData()
                     })
                     
@@ -140,6 +161,20 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDelegate,
         
     }
     
+    @IBAction func refreshCollectionButton(sender: UIBarButtonItem!) {
+        
+        if let pageLimit = numberOfPages {
+            
+            refreshCollectionButton.enabled = false
+            
+            let randomPage = Int(arc4random_uniform(UInt32(pageLimit))) + 1
+            
+            getFlickrPosts(lat, longitude: lon, withPageNumber: randomPage)
+        } else {
+            getFlickrPages(lat, longitude: lon)
+        }
+    }
+    
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return posts.count
     }
@@ -150,6 +185,16 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDelegate,
         return cell
     }
     
+    override func viewWillTransitionToSize(size: CGSize, withTransitionCoordinator coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransitionToSize(size, withTransitionCoordinator: coordinator)
+        
+        collectionView?.collectionViewLayout.invalidateLayout()
+    }
+    
+    func numberOfSectionsInCollectionView(collectionView: UICollectionView) -> Int {
+        return 1
+    }
+    
     func registerCollectionViewCells() {
         collectionView?.registerNib(UINib(nibName: "PhotoCollectionViewCell", bundle: nil), forCellWithReuseIdentifier: reusableIdentifier)
     }
@@ -158,8 +203,8 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDelegate,
 
 extension PhotoCollectionViewController: UICollectionViewDelegateFlowLayout {
     func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAtIndexPath indexPath: NSIndexPath) -> CGSize {
-        //let spacing: CGFloat = 1
-        let itemWidth = (view.bounds.size.width / 2)// - (spacing / 2)
+        let spacing: CGFloat = 1
+        let itemWidth = (view.bounds.size.width / 2) - (spacing / 2)
         let itemHeight = itemWidth
         return CGSize(width: itemWidth, height: itemHeight)
     }
