@@ -30,13 +30,19 @@ class PhotoCollectionViewCell: UICollectionViewCell {
     
     func loadImage() {
         loadingIndicator.startAnimating()
-        request = Alamofire.request(.GET, flickrPost.squareURL) .responseData (completionHandler: { response in
+        
+        guard let url = flickrPost.squareURL else {
+            self.emptyCell()
+            return
+        }
+        
+        request = Alamofire.request(.GET, url) .responseData (completionHandler: { response in
             if let data = response.data {
-                if let image = UIImage(data: data) {
-                    dispatch_async(dispatch_get_main_queue(), {
+                dispatch_async(dispatch_get_main_queue(), {
+                    if let image = UIImage(data: data) {
                         self.populateCell(image)
-                    })
-                }
+                    }
+                })
             }
         })
     }
@@ -44,6 +50,10 @@ class PhotoCollectionViewCell: UICollectionViewCell {
     func populateCell(image: UIImage) {
         loadingIndicator.stopAnimating()
         imageView.image = image
+    }
+    
+    func emptyCell() {
+        loadingIndicator.stopAnimating()
     }
     
 }

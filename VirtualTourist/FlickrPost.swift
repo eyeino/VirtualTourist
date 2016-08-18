@@ -11,7 +11,7 @@ import Freddy
 
 public struct FlickrPost {
     //public let title: String
-    public let squareURL: String
+    public let squareURL: String?
 }
 
 //singleton
