@@ -9,6 +9,7 @@
 import UIKit
 import Alamofire
 
+//Custom cell for collectionView
 class PhotoCollectionViewCell: UICollectionViewCell {
     
     @IBOutlet var imageView: UIImageView!
@@ -32,6 +33,7 @@ class PhotoCollectionViewCell: UICollectionViewCell {
         loadingIndicator.startAnimating()
         
         guard let url = flickrPost.squareURL else {
+            //if url was somehow not initialized, set the cell to empty
             self.emptyCell()
             return
         }
@@ -39,6 +41,7 @@ class PhotoCollectionViewCell: UICollectionViewCell {
         request = Alamofire.request(.GET, url) .responseData (completionHandler: { response in
             if let data = response.data {
                 dispatch_async(dispatch_get_main_queue(), {
+                    //Deserialize the response data into an image and apply it to the cell
                     if let image = UIImage(data: data) {
                         self.populateCell(image)
                     }
@@ -54,6 +57,7 @@ class PhotoCollectionViewCell: UICollectionViewCell {
     
     func emptyCell() {
         loadingIndicator.stopAnimating()
+        imageView.image = nil
     }
     
 }

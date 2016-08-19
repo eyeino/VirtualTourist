@@ -19,6 +19,7 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDelegate,
     @IBOutlet weak var textLabel: UILabel!
     @IBOutlet weak var collectionView: UICollectionView!
     @IBOutlet weak var refreshCollectionButton: UIBarButtonItem!
+    @IBOutlet weak var refreshingIndicator: UIActivityIndicatorView!
     
     var lat: Double = 34.6937
     var lon: Double = 135.5022
@@ -33,17 +34,19 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDelegate,
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
         
+        numberOfPages = nil
+        
         //Add single annotation to mapView
         let annotation = MKPointAnnotation()
         annotation.coordinate = CLLocationCoordinate2D(latitude: lat, longitude: lon)
         mapView.addAnnotation(annotation)
         
         //Zoom to the annotation
-        let regionRadius: CLLocationDistance = 4000
+        let regionRadius: CLLocationDistance = 16000
         let coordinateRegion = MKCoordinateRegionMakeWithDistance(annotation.coordinate, regionRadius * 2.0, regionRadius * 2.0)
         mapView.setRegion(coordinateRegion, animated: true)
         
-        refreshCollectionButton.enabled = false
+        indicateLoading(true)
         textLabel.hidden = true
         
         //Get photos from Flickr
@@ -52,20 +55,38 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDelegate,
     
     @IBAction func refreshCollectionButton(sender: UIBarButtonItem!) {
         
-        
+        //if numberOfPages was already determined, try to get new photos
         if let pageLimit = numberOfPages {
             
-            refreshCollectionButton.enabled = false
+            indicateLoading(true)
             
             let randomPage = Int(arc4random_uniform(UInt32(pageLimit))) + 1
             
             FlickrClient.sharedInstance().getFlickrPosts(lat, longitude: lon, withPageNumber: randomPage, hostViewController: self)
         
+        //if numberOfPages is nil for whatever reason, try to get a value for it and try to get photos
         } else {
+            
             FlickrClient.sharedInstance().getFlickrPages(lat, longitude: lon, hostViewController: self)
         }
     }
+    
+    func indicateLoading(enabled: Bool) {
+        
+        refreshCollectionButton.enabled = !enabled
+        
+        if enabled {
+            refreshingIndicator.startAnimating()
+            refreshCollectionButton.tintColor = UIColor.clearColor()
+        } else {
+            refreshingIndicator.stopAnimating()
+            refreshCollectionButton.tintColor = UIColor.blueColor()
+        }
+        
+    }
 }
+
+//MARK: Delegate Functions
 
 extension PhotoCollectionViewController {
     
@@ -89,6 +110,8 @@ extension PhotoCollectionViewController {
         return 1
     }
 }
+
+//MARK: FlowLayout Configuration
 
 extension PhotoCollectionViewController: UICollectionViewDelegateFlowLayout {
     

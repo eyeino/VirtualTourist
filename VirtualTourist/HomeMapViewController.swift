@@ -37,6 +37,9 @@ class HomeMapViewController: UIViewController, UIGestureRecognizerDelegate, MKMa
             
             let annotation = MKPointAnnotation()
             annotation.coordinate = coordinate
+            
+            //let pin = Pin(latitude: annotation.coordinate.latitude, longitude: annotation.coordinate.longitude, context: self.fetchedResultsController!.managedObjectContext)
+            
             mapView.addAnnotation(annotation)
         }
     }
@@ -64,6 +67,8 @@ class HomeMapViewController: UIViewController, UIGestureRecognizerDelegate, MKMa
         
         lat = view.annotation!.coordinate.latitude
         lon = view.annotation!.coordinate.longitude
+        
+        mapView.deselectAnnotation(view.annotation!, animated: true)
         
         performSegueWithIdentifier("showPhotoCollectionForLocation", sender: view)
     }

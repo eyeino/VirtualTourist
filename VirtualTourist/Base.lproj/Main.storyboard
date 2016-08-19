@@ -124,9 +124,14 @@
                                 <color key="textColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
                                 <nil key="highlightedColor"/>
                             </label>
+                            <activityIndicatorView hidden="YES" opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" hidesWhenStopped="YES" style="gray" translatesAutoresizingMaskIntoConstraints="NO" id="M1b-D6-31I">
+                                <rect key="frame" x="20" y="568" width="20" height="20"/>
+                            </activityIndicatorView>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <constraints>
+                            <constraint firstItem="M1b-D6-31I" firstAttribute="leading" secondItem="1zG-43-fVT" secondAttribute="leadingMargin" id="6F8-ZF-bQa"/>
+                            <constraint firstItem="6YT-kD-VYp" firstAttribute="top" secondItem="M1b-D6-31I" secondAttribute="bottom" constant="12" id="BWa-X0-TK8"/>
                             <constraint firstItem="zuL-Vc-WS1" firstAttribute="centerX" secondItem="1zG-43-fVT" secondAttribute="centerX" id="DKX-zm-tTI"/>
                             <constraint firstAttribute="trailing" secondItem="zuL-Vc-WS1" secondAttribute="trailing" id="Fse-kU-tmS"/>
                             <constraint firstItem="aFC-Br-pEx" firstAttribute="top" secondItem="zuL-Vc-WS1" secondAttribute="bottom" id="LsE-Uo-4xY"/>
@@ -155,6 +160,7 @@
                         <outlet property="collectionView" destination="aFC-Br-pEx" id="aMn-hG-Nu0"/>
                         <outlet property="mapView" destination="zuL-Vc-WS1" id="OON-wL-Ie2"/>
                         <outlet property="refreshCollectionButton" destination="FsV-YC-KUv" id="dP1-oa-tIj"/>
+                        <outlet property="refreshingIndicator" destination="M1b-D6-31I" id="106-GX-up7"/>
                         <outlet property="textLabel" destination="ChP-Vi-nYm" id="rgh-oR-8dx"/>
                     </connections>
                 </viewController>

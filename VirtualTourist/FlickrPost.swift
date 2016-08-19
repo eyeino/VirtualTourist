@@ -14,14 +14,7 @@ public struct FlickrPost {
     public let squareURL: String?
 }
 
-//singleton
-public struct FlickrPosts {
-    static let sharedInstance = FlickrPosts()
-    private init() {}
-    
-    public var list = [FlickrPost]()
-}
-
+//JSONDecodable is a necessary protocol for Freddy (JSON parser framework)
 extension FlickrPost: JSONDecodable {
     public init(json value: JSON) throws {
         //title = try value.string(Constants.FlickrResponseKeys.Title)

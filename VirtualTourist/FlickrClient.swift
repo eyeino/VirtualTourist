@@ -35,6 +35,9 @@ class FlickrClient: NSObject {
             Constants.FlickrParameterKeys.NoJSONCallback: Constants.FlickrParameterValues.DisableJSONCallback
         ]
         
+        //Clear cache to get ready to receive fresh image responses for cells
+        NSURLCache.sharedURLCache().removeAllCachedResponses()
+        
         Alamofire.request(.GET, flickrURL(), parameters: methodParameters) .responseJSON { response in
             if let data = response.data {
                 do {
@@ -53,7 +56,7 @@ class FlickrClient: NSObject {
                     print("Error with parsing JSON. (latlon request)")
                     
                     dispatch_async(dispatch_get_main_queue(), {
-                        hostViewController.refreshCollectionButton.enabled = true
+                        hostViewController.indicateLoading(false)
                     })
                 }
             }
@@ -73,6 +76,9 @@ class FlickrClient: NSObject {
             Constants.FlickrParameterKeys.Page: String(withPageNumber)
         ]
         
+        //Clear cache to get ready to receive fresh image responses for cells
+        NSURLCache.sharedURLCache().removeAllCachedResponses()
+        
         Alamofire.request(.GET, flickrURL(), parameters: methodParameters) .responseJSON { response in
             
             if let data = response.data {
@@ -90,7 +96,7 @@ class FlickrClient: NSObject {
                             hostViewController.textLabel.hidden = true
                         }
                         
-                        hostViewController.refreshCollectionButton.enabled = true
+                        hostViewController.indicateLoading(false)
                         hostViewController.collectionView.reloadData()
                     })
                     
@@ -98,7 +104,7 @@ class FlickrClient: NSObject {
                     print("Error with parsing JSON. (latlonpage request)")
                     
                     dispatch_async(dispatch_get_main_queue(), {
-                        hostViewController.refreshCollectionButton.enabled = true
+                        hostViewController.indicateLoading(false)
                     })
                 }
             }
