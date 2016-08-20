@@ -9,8 +9,13 @@
 import Foundation
 import UIKit
 import MapKit
+import CoreData
 
 class HomeMapViewController: UIViewController, UIGestureRecognizerDelegate, MKMapViewDelegate {
+    
+    let managedObjectContext = DataController.sharedInstance().managedObjectContext
+    let pinFetch = NSFetchRequest(entityName: "Pin")
+    var fetchedPins: [Pin]?
     
     var lat: Double = 34.6937
     var lon: Double = 135.5022
@@ -19,6 +24,28 @@ class HomeMapViewController: UIViewController, UIGestureRecognizerDelegate, MKMa
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        //Get saved pins and add them to the mapView
+        do {
+            fetchedPins = try managedObjectContext.executeFetchRequest(pinFetch) as? [Pin]
+        } catch {
+            fatalError("Failed to fetch employees: \(error)")
+        }
+        
+        if let pins = fetchedPins {
+            var annotations = [MKPointAnnotation()]
+            for pin in pins {
+                guard let lat = pin.lat as? Double, let lon = pin.lon as? Double else {
+                    break
+                }
+                
+                let annotation = MKPointAnnotation()
+                let coordinate = CLLocationCoordinate2D(latitude: lat, longitude: lon)
+                annotation.coordinate = coordinate
+                annotations.append(annotation)
+            }
+            mapView.addAnnotations(annotations)
+        }
         
         // Set up gesture recognition for mapView
         let gestureRecognizer = UILongPressGestureRecognizer(target: self, action: #selector(HomeMapViewController.handleTap))
@@ -38,9 +65,15 @@ class HomeMapViewController: UIViewController, UIGestureRecognizerDelegate, MKMa
             let annotation = MKPointAnnotation()
             annotation.coordinate = coordinate
             
-            //let pin = Pin(latitude: annotation.coordinate.latitude, longitude: annotation.coordinate.longitude, context: self.fetchedResultsController!.managedObjectContext)
-            
             mapView.addAnnotation(annotation)
+            
+            _ = Pin(latitude: coordinate.latitude, longitude: coordinate.longitude, context: managedObjectContext)
+            
+            do {
+                try managedObjectContext.save()
+            } catch {
+                fatalError("Failure to save context: \(error)")
+            }
         }
     }
     
