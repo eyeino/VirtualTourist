@@ -55,6 +55,7 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDelegate,
     
     @IBAction func refreshCollectionButton(sender: UIBarButtonItem!) {
         
+        collectionView.scrollToTop()
         //if numberOfPages was already determined, try to get new photos
         if let pageLimit = numberOfPages {
             
