@@ -8,10 +8,18 @@
 
 import Foundation
 import CoreData
+import UIKit
 
 
 class Photo: NSManagedObject {
 
 // Insert code here to add functionality to your managed object subclass
-
+    convenience init(image: UIImage, context: NSManagedObjectContext) {
+        if let ent = NSEntityDescription.entityForName("Pin", inManagedObjectContext: context) {
+            self.init(entity: ent, insertIntoManagedObjectContext: context)
+            self.photo = UIImagePNGRepresentation(image)
+        } else {
+            fatalError("Unable to find Entity (notebook) name.")
+        }
+    }
 }

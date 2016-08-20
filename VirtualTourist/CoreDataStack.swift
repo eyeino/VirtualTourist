@@ -45,6 +45,22 @@ class DataController: NSObject {
         }
     }
     
+    func saveContext () {
+        
+        let context = self.managedObjectContext
+        var error: NSError? = nil
+            
+        if context.hasChanges {
+            do {
+                try context.save()
+            } catch let saveError as NSError {
+                error = saveError
+                NSLog("Unresolved error \(error), \(error!.userInfo)")
+                abort()
+            }
+        }
+    }
+    
     class func sharedInstance() -> DataController {
         struct Singleton {
             static var sharedInstance = DataController()

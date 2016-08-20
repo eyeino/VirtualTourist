@@ -9,17 +9,28 @@
 import Foundation
 import UIKit
 import MapKit
+import CoreData
 
-import Alamofire
-import Freddy
+import Alamofire //Networking framework
+import Freddy //Framework that converts JSON to Swift objects
 
-class PhotoCollectionViewController: UIViewController, UICollectionViewDelegate, MKMapViewDelegate {
+class PhotoCollectionViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, MKMapViewDelegate, NSFetchedResultsControllerDelegate {
     
     @IBOutlet weak var mapView: MKMapView!
     @IBOutlet weak var textLabel: UILabel!
     @IBOutlet weak var collectionView: UICollectionView!
     @IBOutlet weak var refreshCollectionButton: UIBarButtonItem!
     @IBOutlet weak var refreshingIndicator: UIActivityIndicatorView!
+    
+    // The selected indexes array keeps all of the indexPaths for cells that are "selected". The array is
+    // used inside cellForItemAtIndexPath to lower the alpha of selected cells.  You can see how the array
+    // works by searchign through the code for 'selectedIndexes'
+    var selectedIndexes = [NSIndexPath]()
+    
+    // Keep the changes. We will keep track of insertions, deletions, and updates.
+    var insertedIndexPaths: [NSIndexPath]!
+    var deletedIndexPaths: [NSIndexPath]!
+    var updatedIndexPaths: [NSIndexPath]!
     
     var lat: Double = 34.6937
     var lon: Double = 135.5022
@@ -31,8 +42,22 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDelegate,
     
     let reusableIdentifier = "photoCell"
     
+    var sharedContext = DataController.sharedInstance().managedObjectContext
+    
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
+        
+        // Start the fetched results controller
+        var error: NSError?
+        do {
+            try fetchedResultsController.performFetch()
+        } catch let fetchError as NSError {
+            error = fetchError
+        }
+        
+        if let error = error {
+            print("Error performing initial fetch: \(error)")
+        }
         
         numberOfPages = nil
         
@@ -85,6 +110,19 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDelegate,
         }
         
     }
+    
+    // MARK: - NSFetchedResultsController
+    
+    lazy var fetchedResultsController: NSFetchedResultsController = {
+        
+        let fetchRequest = NSFetchRequest(entityName: "Photo")
+        fetchRequest.sortDescriptors = []
+        
+        let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: self.sharedContext, sectionNameKeyPath: nil, cacheName: nil)
+        fetchedResultsController.delegate = self
+        
+        return fetchedResultsController
+    }()
 }
 
 //MARK: Delegate Functions
@@ -99,6 +137,99 @@ extension PhotoCollectionViewController {
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier(reusableIdentifier, forIndexPath: indexPath) as! PhotoCollectionViewCell
             cell.configure(posts[indexPath.row])
         return cell
+    }
+    
+    func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
+
+        let cell = collectionView.cellForItemAtIndexPath(indexPath) as! PhotoCollectionViewCell
+        
+        // Whenever a cell is tapped we will toggle its presence in the selectedIndexes array
+        if let index = selectedIndexes.indexOf(indexPath) {
+            selectedIndexes.removeAtIndex(index)
+        } else {
+            selectedIndexes.append(indexPath)
+        }
+        
+        // Then reconfigure the cell
+        cell.configure(posts[indexPath.row])
+        
+        // And update the buttom button
+        //updateTrashButton()
+    }
+    
+    // MARK: - Fetched Results Controller Delegate
+    
+    // Whenever changes are made to Core Data the following three methods are invoked. This first method is used to create
+    // three fresh arrays to record the index paths that will be changed.
+    func controllerWillChangeContent(controller: NSFetchedResultsController) {
+        
+        // We are about to handle some new changes. Start out with empty arrays for each change type
+        insertedIndexPaths = [NSIndexPath]()
+        deletedIndexPaths = [NSIndexPath]()
+        updatedIndexPaths = [NSIndexPath]()
+        
+        print("in controllerWillChangeContent")
+    }
+    
+    // The second method may be called multiple times, once for each Color object that is added, deleted, or changed.
+    // We store the incex paths into the three arrays.
+    
+    
+    func controller(controller: NSFetchedResultsController, didChangeObject anObject: AnyObject, atIndexPath indexPath: NSIndexPath?, forChangeType type: NSFetchedResultsChangeType, newIndexPath: NSIndexPath?) {
+        switch type {
+            
+        case .Insert:
+            print("Insert an item")
+            // Here we are noting that a new Photo instance has been added to Core Data. We remember its index path
+            // so that we can add a cell in "controllerDidChangeContent". Note that the "newIndexPath" parameter has
+            // the index path that we want in this case
+            insertedIndexPaths.append(newIndexPath!)
+            break
+        case .Delete:
+            print("Delete an item")
+            // Here we are noting that a Photo instance has been deleted from Core Data. We keep remember its index path
+            // so that we can remove the corresponding cell in "controllerDidChangeContent". The "indexPath" parameter has
+            // value that we want in this case.
+            deletedIndexPaths.append(indexPath!)
+            break
+        case .Update:
+            print("Update an item.")
+            // We don't expect Photo instances to change after they are created. But Core Data would
+            // notify us of changes if any occured. This can be useful if you want to respond to changes
+            // that come about after data is downloaded. For example, when an images is downloaded from
+            // Flickr in the Virtual Tourist app
+            updatedIndexPaths.append(indexPath!)
+            break
+        case .Move:
+            break
+        }
+    }
+    
+    // This method is invoked after all of the changed in the current batch have been collected
+    // into the three index path arrays (insert, delete, and upate). We now need to loop through the
+    // arrays and perform the changes.
+    //
+    // The most interesting thing about the method is the collection view's "performBatchUpdates" method.
+    // Notice that all of the changes are performed inside a closure that is handed to the collection view.
+    func controllerDidChangeContent(controller: NSFetchedResultsController) {
+        
+        print("in controllerDidChangeContent. changes.count: \(insertedIndexPaths.count + deletedIndexPaths.count)")
+        
+        collectionView.performBatchUpdates({() -> Void in
+            
+            for indexPath in self.insertedIndexPaths {
+                self.collectionView.insertItemsAtIndexPaths([indexPath])
+            }
+            
+            for indexPath in self.deletedIndexPaths {
+                self.collectionView.deleteItemsAtIndexPaths([indexPath])
+            }
+            
+            for indexPath in self.updatedIndexPaths {
+                self.collectionView.reloadItemsAtIndexPaths([indexPath])
+            }
+            
+            }, completion: nil)
     }
         
     override func viewWillTransitionToSize(size: CGSize, withTransitionCoordinator coordinator: UIViewControllerTransitionCoordinator) {
