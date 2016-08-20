@@ -32,33 +32,43 @@ class FlickrClient: NSObject {
             Constants.FlickrParameterKeys.SafeSearch: Constants.FlickrParameterValues.UseSafeSearch,
             Constants.FlickrParameterKeys.Extras: Constants.FlickrParameterValues.SquareURL,
             Constants.FlickrParameterKeys.Format: Constants.FlickrParameterValues.ResponseFormat,
-            Constants.FlickrParameterKeys.NoJSONCallback: Constants.FlickrParameterValues.DisableJSONCallback
+            Constants.FlickrParameterKeys.NoJSONCallback: Constants.FlickrParameterValues.DisableJSONCallback,
+            Constants.FlickrParameterKeys.PerPage: Constants.FlickrParameterValues.PerPage
         ]
         
         //Clear cache to get ready to receive fresh image responses for cells
-        NSURLCache.sharedURLCache().removeAllCachedResponses()
         
-        Alamofire.request(.GET, flickrURL(), parameters: methodParameters) .responseJSON { response in
-            if let data = response.data {
-                do {
-                    let json = try JSON(data: data)
-                    let pages = try json.int(Constants.FlickrResponseKeys.Photos, Constants.FlickrResponseKeys.Pages)
-                    
-                    let pageLimit = min(pages, Constants.Flickr.maxPages)
-                    
-                    hostViewController.numberOfPages = pageLimit
-                    
-                    let randomPage = Int(arc4random_uniform(UInt32(pageLimit))) + 1
-                    
-                    self.getFlickrPosts(latitude, longitude: longitude, withPageNumber: randomPage, hostViewController: hostViewController)
-                    
-                } catch {
-                    print("Error with parsing JSON. (latlon request)")
-                    
+        Alamofire.request(.GET, flickrURL(), parameters: methodParameters)
+            .validate()
+            .responseJSON { response in
+                switch(response.result) {
+                case .Success:
+                    if let data = response.data {
+                        do {
+                            let json = try JSON(data: data)
+                            let pages = try json.int(Constants.FlickrResponseKeys.Photos, Constants.FlickrResponseKeys.Pages)
+                            
+                            let pageLimit = min(pages, Constants.Flickr.maxPages)
+                            
+                            hostViewController.numberOfPages = pageLimit
+                            
+                            let randomPage = Int(arc4random_uniform(UInt32(pageLimit))) + 1
+                            
+                            self.getFlickrPosts(latitude, longitude: longitude, withPageNumber: randomPage, hostViewController: hostViewController)
+                            
+                        } catch {
+                            print("Error with parsing JSON. (latlon request)")
+                            
+                            dispatch_async(dispatch_get_main_queue(), {
+                                hostViewController.indicateLoading(false)
+                            })
+                        }
+                    }
+                case .Failure:
+                    print(response.result.error)
                     dispatch_async(dispatch_get_main_queue(), {
                         hostViewController.indicateLoading(false)
                     })
-                }
             }
         }
     }
@@ -73,42 +83,55 @@ class FlickrClient: NSObject {
             Constants.FlickrParameterKeys.Extras: Constants.FlickrParameterValues.SquareURL,
             Constants.FlickrParameterKeys.Format: Constants.FlickrParameterValues.ResponseFormat,
             Constants.FlickrParameterKeys.NoJSONCallback: Constants.FlickrParameterValues.DisableJSONCallback,
-            Constants.FlickrParameterKeys.Page: String(withPageNumber)
+            Constants.FlickrParameterKeys.Page: String(withPageNumber),
+            Constants.FlickrParameterKeys.PerPage: Constants.FlickrParameterValues.PerPage
         ]
         
         //Clear cache to get ready to receive fresh image responses for cells
-        NSURLCache.sharedURLCache().removeAllCachedResponses()
+        //NSURLCache.sharedURLCache().removeAllCachedResponses()
         
-        Alamofire.request(.GET, flickrURL(), parameters: methodParameters) .responseJSON { response in
-            
-            if let data = response.data {
-                do {
-                    let json = try JSON(data: data)
-                    let posts = try json.array(Constants.FlickrResponseKeys.Photos, Constants.FlickrResponseKeys.Photo).map(FlickrPost.init)
-                    
-                    hostViewController.posts = posts
-                    
-                    dispatch_async(dispatch_get_main_queue(), {
-                        
-                        if hostViewController.posts.isEmpty {
-                            hostViewController.textLabel.hidden = false
-                        } else {
-                            hostViewController.textLabel.hidden = true
+        let request = NSMutableURLRequest(URL: flickrURL())
+        request.cachePolicy = NSURLRequestCachePolicy.ReloadIgnoringLocalCacheData
+        
+        Alamofire.request(.GET, request, parameters: methodParameters)
+            .validate()
+            .responseJSON { response in
+                switch(response.result) {
+                case .Success:
+                    if let data = response.data {
+                        do {
+                            let json = try JSON(data: data)
+                            let posts = try json.array(Constants.FlickrResponseKeys.Photos, Constants.FlickrResponseKeys.Photo).map(FlickrPost.init)
+                            
+                            hostViewController.posts = posts
+                            
+                            dispatch_async(dispatch_get_main_queue(), {
+                                
+                                if hostViewController.posts.isEmpty {
+                                    hostViewController.textLabel.hidden = false
+                                } else {
+                                    hostViewController.textLabel.hidden = true
+                                }
+                                
+                                hostViewController.indicateLoading(false)
+                                hostViewController.collectionView.reloadData()
+                            })
+                            
+                        } catch {
+                            print("Error with parsing JSON. (latlonpage request)")
+                            
+                            dispatch_async(dispatch_get_main_queue(), {
+                                hostViewController.indicateLoading(false)
+                            })
                         }
-                        
-                        hostViewController.indicateLoading(false)
-                        hostViewController.collectionView.reloadData()
-                    })
-                    
-                } catch {
-                    print("Error with parsing JSON. (latlonpage request)")
-                    
+                    }
+                case .Failure:
+                    print(response.result.error)
                     dispatch_async(dispatch_get_main_queue(), {
                         hostViewController.indicateLoading(false)
                     })
                 }
             }
-        }
         
     }
     

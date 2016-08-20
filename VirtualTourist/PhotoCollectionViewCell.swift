@@ -32,22 +32,40 @@ class PhotoCollectionViewCell: UICollectionViewCell {
     func loadImage() {
         loadingIndicator.startAnimating()
         
-        guard let url = flickrPost.squareURL else {
+        guard let urlString = flickrPost.squareURL else {
             //if url was somehow not initialized, set the cell to empty
             self.emptyCell()
             return
         }
         
-        request = Alamofire.request(.GET, url) .responseData (completionHandler: { response in
-            if let data = response.data {
-                dispatch_async(dispatch_get_main_queue(), {
-                    //Deserialize the response data into an image and apply it to the cell
-                    if let image = UIImage(data: data) {
-                        self.populateCell(image)
+        guard let url = NSURL(string: urlString) else {
+            //if url was somehow not initialized, set the cell to empty
+            self.emptyCell()
+            return
+        }
+        
+        //let mutableURLRequest = NSMutableURLRequest(URL: url)
+        //mutableURLRequest.cachePolicy = NSURLRequestCachePolicy.ReloadIgnoringLocalCacheData
+        
+        request = Alamofire.request(.GET, url)
+            .validate()
+            .responseData (completionHandler: { response in
+                switch(response.result) {
+                case .Success:
+                    if let data = response.data {
+                        dispatch_async(dispatch_get_main_queue(), {
+                            //Deserialize the response data into an image and apply it to the cell
+                            if let image = UIImage(data: data) {
+                                self.populateCell(image)
+                            }
+                        })
                     }
-                })
-            }
-        })
+                case .Failure:
+                    dispatch_async(dispatch_get_main_queue(), { 
+                        self.emptyCell()
+                    })
+                }
+            })
     }
     
     func populateCell(image: UIImage) {

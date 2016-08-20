@@ -20,7 +20,8 @@ struct Constants {
         static let SearchBBoxHalfHeight = 0.125
         static let SearchLatRange = (-90.0, 90.0)
         static let SearchLonRange = (-180.0, 180.0)
-        static let maxPages = 40
+        static let maxPages = maxPhotos / Int(FlickrParameterValues.PerPage)!
+        static let maxPhotos = 4000
     }
     
     // MARK: Flickr Parameter Keys
@@ -35,6 +36,7 @@ struct Constants {
         static let Text = "text"
         static let BoundingBox = "bbox"
         static let Page = "page"
+        static let PerPage = "per_page"
     }
     
     // MARK: Flickr Parameter Values
@@ -49,6 +51,7 @@ struct Constants {
         static let MediumURL = "url_m"
         static let UseSafeSearch = "1"
         static let SquareURL = "url_q"
+        static let PerPage = "20"
     }
     
     // MARK: Flickr Response Keys
