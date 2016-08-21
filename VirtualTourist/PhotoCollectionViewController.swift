@@ -6,7 +6,6 @@
 //  Copyright © 2016 Ian MacFarlane. All rights reserved.
 //
 
-import Foundation
 import UIKit
 import MapKit
 import CoreData
@@ -34,6 +33,7 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDataSourc
     
     var lat: Double = 34.6937
     var lon: Double = 135.5022
+    var pin: Pin?
     
     var posts = [FlickrPost]()
     
@@ -44,8 +44,8 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDataSourc
     
     var sharedContext = DataController.sharedInstance().managedObjectContext
     
-    override func viewWillAppear(animated: Bool) {
-        super.viewWillAppear(animated)
+    override func viewDidLoad() {
+        super.viewDidLoad()
         
         // Start the fetched results controller
         var error: NSError?
@@ -58,9 +58,21 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDataSourc
         if let error = error {
             print("Error performing initial fetch: \(error)")
         }
+ 
+    }
+    
+    override func viewWillAppear(animated: Bool) {
+        super.viewWillAppear(animated)
         
         numberOfPages = nil
+        indicateLoading(true)
+        textLabel.hidden = true
         
+        if (fetchedResultsController.fetchedObjects?.count == 0) {
+            FlickrClient.sharedInstance().getFlickrPages(lat, longitude: lon, hostViewController: self)
+        }
+        
+        print(fetchedResultsController.fetchedObjects?.count)
         //Add single annotation to mapView
         let annotation = MKPointAnnotation()
         annotation.coordinate = CLLocationCoordinate2D(latitude: lat, longitude: lon)
@@ -70,12 +82,6 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDataSourc
         let regionRadius: CLLocationDistance = 16000
         let coordinateRegion = MKCoordinateRegionMakeWithDistance(annotation.coordinate, regionRadius * 2.0, regionRadius * 2.0)
         mapView.setRegion(coordinateRegion, animated: true)
-        
-        indicateLoading(true)
-        textLabel.hidden = true
-        
-        //Get photos from Flickr
-        FlickrClient.sharedInstance().getFlickrPages(lat, longitude: lon, hostViewController: self)
     }
     
     @IBAction func refreshCollectionButton(sender: UIBarButtonItem!) {
@@ -118,7 +124,7 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDataSourc
         let fetchRequest = NSFetchRequest(entityName: "Photo")
         fetchRequest.sortDescriptors = []
         
-        let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: self.sharedContext, sectionNameKeyPath: nil, cacheName: nil)
+        let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: self.sharedContext!, sectionNameKeyPath: nil, cacheName: nil)
         fetchedResultsController.delegate = self
         
         return fetchedResultsController
@@ -130,12 +136,20 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDataSourc
 extension PhotoCollectionViewController {
     
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return posts.count
+        
+        if let sections = self.fetchedResultsController.sections {
+            let sectionInfo = sections[section]
+            print("number Of Cells: \(sectionInfo.numberOfObjects)")
+            return sectionInfo.numberOfObjects
+        }
+        
+        return 0
     }
         
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier(reusableIdentifier, forIndexPath: indexPath) as! PhotoCollectionViewCell
-            cell.configure(posts[indexPath.row])
+        
+        self.configurePhotoCell(cell, atIndexPath: indexPath)
         return cell
     }
     
@@ -151,11 +165,12 @@ extension PhotoCollectionViewController {
         }
         
         // Then reconfigure the cell
-        cell.configure(posts[indexPath.row])
+        self.configurePhotoCell(cell, atIndexPath: indexPath)
         
         // And update the buttom button
         //updateTrashButton()
     }
+ 
     
     // MARK: - Fetched Results Controller Delegate
     
@@ -241,6 +256,68 @@ extension PhotoCollectionViewController {
     func numberOfSectionsInCollectionView(collectionView: UICollectionView) -> Int {
         return 1
     }
+    
+    // MARK: - Actions and Helpers
+    
+    @IBAction func trashOrRefreshButton() {
+        
+        if selectedIndexes.isEmpty {
+            deleteAllPhotos()
+        } else {
+            deleteSelectedPhotos()
+        }
+    }
+    
+    func deleteAllPhotos() {
+        
+        for photo in fetchedResultsController.fetchedObjects as! [Photo] {
+            sharedContext!.deleteObject(photo)
+        }
+    }
+    
+    func deleteSelectedPhotos() {
+        var photosToDelete = [Photo]()
+        
+        for indexPath in selectedIndexes {
+            photosToDelete.append(fetchedResultsController.objectAtIndexPath(indexPath) as! Photo)
+        }
+        
+        for photo in photosToDelete {
+            sharedContext!.deleteObject(photo)
+        }
+        
+        selectedIndexes = [NSIndexPath]()
+    }
+    
+    func configurePhotoCell(cell: PhotoCollectionViewCell, atIndexPath indexPath: NSIndexPath) {
+        print("in configureCell")
+        if let photo = self.fetchedResultsController.objectAtIndexPath(indexPath) as? Photo {
+            cell.photo = UIImage(data: photo.photo!)!
+        } else {
+            cell.configure(posts[indexPath.row])
+            _ = Photo(image: cell.photo, pin: pin!, context: sharedContext!)
+            DataController.sharedInstance().saveContext()
+        }
+    
+        // If the cell is "selected" it's color panel is grayed out
+        // we use the Swift `find` function to see if the indexPath is in the array
+    
+        if let _ = selectedIndexes.indexOf(indexPath) {
+            cell.imageView.tintImageColor(UIColor.redColor())
+        } else {
+            cell.imageView.tintImageColor(UIColor.clearColor())
+        }
+    }
+
+    /*
+    func updateBottomButton() {
+        if selectedIndexes.count > 0 {
+            bottomButton.title = "Remove Selected Colors"
+        } else {
+            bottomButton.title = "Clear All"
+        }
+    }
+    */
 }
 
 //MARK: FlowLayout Configuration

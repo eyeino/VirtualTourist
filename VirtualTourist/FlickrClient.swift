@@ -25,6 +25,8 @@ class FlickrClient: NSObject {
     
     func getFlickrPages(latitude: Double, longitude: Double, hostViewController: PhotoCollectionViewController) {
         
+        print("called getFlickrPages")
+        
         let methodParameters = [
             Constants.FlickrParameterKeys.Method: Constants.FlickrParameterValues.SearchMethod,
             Constants.FlickrParameterKeys.APIKey: Constants.FlickrParameterValues.APIKey,
@@ -74,6 +76,8 @@ class FlickrClient: NSObject {
     }
     
     func getFlickrPosts(latitude: Double, longitude: Double, withPageNumber: Int, hostViewController: PhotoCollectionViewController) {
+        
+        print("called getFlickrPosts")
         
         let methodParameters = [
             Constants.FlickrParameterKeys.Method: Constants.FlickrParameterValues.SearchMethod,

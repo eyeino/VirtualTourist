@@ -6,7 +6,6 @@
 //  Copyright © 2016 Ian MacFarlane. All rights reserved.
 //
 
-import Foundation
 import UIKit
 import MapKit
 import CoreData
@@ -27,7 +26,7 @@ class HomeMapViewController: UIViewController, UIGestureRecognizerDelegate, MKMa
         
         //Get saved pins and add them to the mapView
         do {
-            fetchedPins = try managedObjectContext.executeFetchRequest(pinFetch) as? [Pin]
+            fetchedPins = try managedObjectContext!.executeFetchRequest(pinFetch) as? [Pin]
         } catch {
             fatalError("Failed to fetch employees: \(error)")
         }
@@ -67,10 +66,10 @@ class HomeMapViewController: UIViewController, UIGestureRecognizerDelegate, MKMa
             
             mapView.addAnnotation(annotation)
             
-            _ = Pin(latitude: coordinate.latitude, longitude: coordinate.longitude, context: managedObjectContext)
+            _ = Pin(latitude: coordinate.latitude, longitude: coordinate.longitude, context: managedObjectContext!)
             
             do {
-                try managedObjectContext.save()
+                try managedObjectContext!.save()
             } catch {
                 fatalError("Failure to save context: \(error)")
             }
@@ -101,7 +100,7 @@ class HomeMapViewController: UIViewController, UIGestureRecognizerDelegate, MKMa
         lat = view.annotation!.coordinate.latitude
         lon = view.annotation!.coordinate.longitude
         
-        mapView.deselectAnnotation(view.annotation!, animated: true)
+        mapView.deselectAnnotation(view.annotation!, animated: false)
         
         performSegueWithIdentifier("showPhotoCollectionForLocation", sender: view)
     }
@@ -111,6 +110,13 @@ class HomeMapViewController: UIViewController, UIGestureRecognizerDelegate, MKMa
             let destinationVC: PhotoCollectionViewController = segue.destinationViewController as! PhotoCollectionViewController
             destinationVC.lat = lat
             destinationVC.lon = lon
+            
+            
+            do {
+                try destinationVC.pin = managedObjectContext?.executeFetchRequest(pinFetch)[0] as? Pin
+            } catch {
+                print("could not find pin")
+            }
         }
     }
     

@@ -9,7 +9,7 @@
 import UIKit
 import CoreData
 
-class DataController: NSObject {
+class DataController1: NSObject {
     
     var managedObjectContext: NSManagedObjectContext
     

@@ -16,3 +16,12 @@ extension UIScrollView {
         setContentOffset(desiredOffset, animated: true)
     }
 }
+
+extension UIImageView {
+    //Applies tint to UIImageView
+    func tintImageColor(color: UIColor) {
+        self.image = self.image!.imageWithRenderingMode(UIImageRenderingMode.AlwaysTemplate)
+        self.tintColor = color
+    }
+    
+}
