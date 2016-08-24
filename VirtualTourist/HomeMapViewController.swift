@@ -6,7 +6,6 @@
 //  Copyright © 2016 Ian MacFarlane. All rights reserved.
 //
 
-import Foundation
 import UIKit
 import MapKit
 import CoreData
@@ -15,24 +14,24 @@ class HomeMapViewController: UIViewController, UIGestureRecognizerDelegate, MKMa
     
     let managedObjectContext = DataController.sharedInstance().managedObjectContext
     let pinFetch = NSFetchRequest(entityName: "Pin")
-    var fetchedPins: [Pin]?
     
-    var lat: Double = 34.6937
-    var lon: Double = 135.5022
+    var lat: Double = 40.0
+    var lon: Double = 40.0
     
     @IBOutlet weak var mapView: MKMapView!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        var fetchedPins: [Pin]?
         //Get saved pins and add them to the mapView
         do {
             fetchedPins = try managedObjectContext.executeFetchRequest(pinFetch) as? [Pin]
         } catch {
-            fatalError("Failed to fetch employees: \(error)")
+            fatalError("Failed to fetch pins: \(error)")
         }
         
-        if let pins = fetchedPins {
+        if fetchedPins != nil, let pins = fetchedPins {
             var annotations = [MKPointAnnotation()]
             for pin in pins {
                 guard let lat = pin.lat as? Double, let lon = pin.lon as? Double else {
@@ -46,6 +45,7 @@ class HomeMapViewController: UIViewController, UIGestureRecognizerDelegate, MKMa
             }
             mapView.addAnnotations(annotations)
         }
+        
         
         // Set up gesture recognition for mapView
         let gestureRecognizer = UILongPressGestureRecognizer(target: self, action: #selector(HomeMapViewController.handleTap))
@@ -101,7 +101,7 @@ class HomeMapViewController: UIViewController, UIGestureRecognizerDelegate, MKMa
         lat = view.annotation!.coordinate.latitude
         lon = view.annotation!.coordinate.longitude
         
-        mapView.deselectAnnotation(view.annotation!, animated: true)
+        mapView.deselectAnnotation(view.annotation!, animated: false)
         
         performSegueWithIdentifier("showPhotoCollectionForLocation", sender: view)
     }
@@ -109,9 +109,33 @@ class HomeMapViewController: UIViewController, UIGestureRecognizerDelegate, MKMa
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
         if (segue.identifier == "showPhotoCollectionForLocation") {
             let destinationVC: PhotoCollectionViewController = segue.destinationViewController as! PhotoCollectionViewController
+            let pin = findPinWithCoordinates(lat, longitude: lon)
+            
             destinationVC.lat = lat
             destinationVC.lon = lon
+            destinationVC.pin = pin
+            
         }
+    }
+    
+    func findPinWithCoordinates(latitude: Double, longitude: Double) -> Pin? {
+        
+        var pin: Pin?
+        let searchParameter = String(latitude) + String(longitude)
+        let fetch = NSFetchRequest(entityName: "Pin")
+        fetch.predicate = NSPredicate(format: "id == %@", searchParameter)
+        
+        let moc = self.managedObjectContext
+        do {
+            let fetchedPins = try moc.executeFetchRequest(fetch) as! [Pin]
+            pin = fetchedPins[0]
+            
+            print("FOUND PIN: \(pin)")
+        } catch {
+            print("Error fetching pin for lon: \(longitude) and lat: \(latitude)")
+        }
+        
+        return pin
     }
     
 }

@@ -8,20 +8,38 @@
 
 import UIKit
 import Alamofire
+import CoreData
 
 //Custom cell for collectionView
-class PhotoCollectionViewCell: UICollectionViewCell {
+class PhotoCollectionViewCell: UICollectionViewCell, NSFetchedResultsControllerDelegate {
     
     @IBOutlet var imageView: UIImageView!
     @IBOutlet var loadingIndicator: UIActivityIndicatorView!
     
+    var photo: UIImage? {
+        set {
+            self.imageView.image = newValue
+        }
+        
+        get {
+            return imageView.image
+        }
+    }
+    
+    var pin: Pin?
     var request: Request?
     var flickrPost: FlickrPost!
+    var sharedContext = DataController.sharedInstance().managedObjectContext
     
-    func configure(flickrPost: FlickrPost) {
+    func initialize(flickrPost: FlickrPost) {
         self.flickrPost = flickrPost
+        self.imageView.image = nil
+    }
+    
+    func configure(indexPath: NSIndexPath, fetchedResultsController: NSFetchedResultsController) {
+        print("in cell configure")
         reset()
-        loadImage()
+        loadImage(indexPath, fetchedResultsController: fetchedResultsController)
     }
     
     func reset() {
@@ -29,23 +47,32 @@ class PhotoCollectionViewCell: UICollectionViewCell {
         request?.cancel()
     }
     
-    func loadImage() {
+    func loadImage(indexPath: NSIndexPath, fetchedResultsController: NSFetchedResultsController) {
+        print("in cell loadImage")
+        
         loadingIndicator.startAnimating()
         
-        guard let urlString = flickrPost.squareURL else {
+        let photo = fetchedResultsController.objectAtIndexPath(indexPath) as! Photo
+        
+        guard let urlString = photo.url else {
             //if url was somehow not initialized, set the cell to empty
-            self.emptyCell()
+            photo.photo = nil
+            DataController.sharedInstance().saveContext()
+            
             return
         }
         
         guard let url = NSURL(string: urlString) else {
             //if url was somehow not initialized, set the cell to empty
-            self.emptyCell()
+            photo.photo = nil
+            DataController.sharedInstance().saveContext()
+            
             return
         }
         
         //let mutableURLRequest = NSMutableURLRequest(URL: url)
         //mutableURLRequest.cachePolicy = NSURLRequestCachePolicy.ReloadIgnoringLocalCacheData
+        print("requesting thumbnail for cell")
         
         request = Alamofire.request(.GET, url)
             .validate()
@@ -55,22 +82,31 @@ class PhotoCollectionViewCell: UICollectionViewCell {
                     if let data = response.data {
                         dispatch_async(dispatch_get_main_queue(), {
                             //Deserialize the response data into an image and apply it to the cell
-                            if let image = UIImage(data: data) {
-                                self.populateCell(image)
-                            }
+                            photo.photo = data
+                            DataController.sharedInstance().saveContext()
+                            self.loadingIndicator.stopAnimating()
                         })
                     }
                 case .Failure:
-                    dispatch_async(dispatch_get_main_queue(), { 
-                        self.emptyCell()
+                    dispatch_async(dispatch_get_main_queue(), {
+                        photo.photo = nil
+                        DataController.sharedInstance().saveContext()
+                        self.loadingIndicator.stopAnimating()
+                        
                     })
                 }
             })
     }
     
     func populateCell(image: UIImage) {
+        print("in cell populateCell")
+        
         loadingIndicator.stopAnimating()
         imageView.image = image
+        
+        //insert photo into sharedcontext and save upon loading
+        //_ = Photo(image: image, context: sharedContext)
+        //DataController.sharedInstance().saveContext()
     }
     
     func emptyCell() {

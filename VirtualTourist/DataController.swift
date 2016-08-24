@@ -1,5 +1,5 @@
 //
-//  CoreDataStack.swift
+//  DataController.swift
 //  VirtualTourist
 //
 //  Created by Ian MacFarlane on 8/17/16.
@@ -41,6 +41,22 @@ class DataController: NSObject {
                 try psc.addPersistentStoreWithType(NSSQLiteStoreType, configuration: nil, URL: storeURL, options: nil)
             } catch {
                 fatalError("Error migrating store: \(error)")
+            }
+        }
+    }
+    
+    func saveContext () {
+        
+        let context = self.managedObjectContext
+        var error: NSError? = nil
+            
+        if context.hasChanges {
+            do {
+                try context.save()
+            } catch let saveError as NSError {
+                error = saveError
+                NSLog("Unresolved error \(error), \(error!.userInfo)")
+                abort()
             }
         }
     }

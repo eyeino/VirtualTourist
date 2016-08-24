@@ -9,8 +9,19 @@
 import UIKit
 
 extension UIScrollView {
+    
+    //Scrolls to the top of a UIScrollView when called
     func scrollToTop() {
         let desiredOffset = CGPoint(x: 0, y: -contentInset.top)
         setContentOffset(desiredOffset, animated: true)
     }
+}
+
+extension UIImageView {
+    //Applies tint to UIImageView
+    func tintImageColor(color: UIColor) {
+        self.image = self.image!.imageWithRenderingMode(UIImageRenderingMode.AlwaysTemplate)
+        self.tintColor = color
+    }
+    
 }
