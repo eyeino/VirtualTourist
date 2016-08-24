@@ -101,6 +101,10 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDataSourc
             
             FlickrClient.sharedInstance().getFlickrPages(lat, longitude: lon, hostViewController: self)
         }
+        
+        for post in posts {
+            addPhotoFromFlickrPost(post)
+        }
     }
     
     func indicateLoading(enabled: Bool) {
@@ -124,7 +128,7 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDataSourc
         let fetchRequest = NSFetchRequest(entityName: "Photo")
         fetchRequest.sortDescriptors = []
         
-        let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: self.sharedContext!, sectionNameKeyPath: nil, cacheName: nil)
+        let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: self.sharedContext, sectionNameKeyPath: nil, cacheName: nil)
         fetchedResultsController.delegate = self
         
         return fetchedResultsController
@@ -135,18 +139,21 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDataSourc
 
 extension PhotoCollectionViewController {
     
+    func numberOfSectionsInCollectionView(collectionView: UICollectionView) -> Int {
+        print("in numberOfSectionsInCollectionView()")
+        return self.fetchedResultsController.sections?.count ?? 0
+    }
+    
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        print("in collectionView(_:numberOfItemsInSection)")
+        let sectionInfo = self.fetchedResultsController.sections![section]
         
-        if let sections = self.fetchedResultsController.sections {
-            let sectionInfo = sections[section]
-            print("number Of Cells: \(sectionInfo.numberOfObjects)")
-            return sectionInfo.numberOfObjects
-        }
-        
-        return 0
+        print("number Of Cells: \(sectionInfo.numberOfObjects)")
+        return sectionInfo.numberOfObjects
     }
         
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
+        print("in cell for item at index path")
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier(reusableIdentifier, forIndexPath: indexPath) as! PhotoCollectionViewCell
         
         self.configurePhotoCell(cell, atIndexPath: indexPath)
@@ -252,10 +259,6 @@ extension PhotoCollectionViewController {
             
         collectionView?.collectionViewLayout.invalidateLayout()
     }
-        
-    func numberOfSectionsInCollectionView(collectionView: UICollectionView) -> Int {
-        return 1
-    }
     
     // MARK: - Actions and Helpers
     
@@ -271,7 +274,7 @@ extension PhotoCollectionViewController {
     func deleteAllPhotos() {
         
         for photo in fetchedResultsController.fetchedObjects as! [Photo] {
-            sharedContext!.deleteObject(photo)
+            sharedContext.deleteObject(photo)
         }
     }
     
@@ -283,7 +286,7 @@ extension PhotoCollectionViewController {
         }
         
         for photo in photosToDelete {
-            sharedContext!.deleteObject(photo)
+            sharedContext.deleteObject(photo)
         }
         
         selectedIndexes = [NSIndexPath]()
@@ -295,18 +298,33 @@ extension PhotoCollectionViewController {
             cell.photo = UIImage(data: photo.photo!)!
         } else {
             cell.configure(posts[indexPath.row])
-            _ = Photo(image: cell.photo, pin: pin!, context: sharedContext!)
-            DataController.sharedInstance().saveContext()
         }
     
         // If the cell is "selected" it's color panel is grayed out
         // we use the Swift `find` function to see if the indexPath is in the array
     
         if let _ = selectedIndexes.indexOf(indexPath) {
-            cell.imageView.tintImageColor(UIColor.redColor())
+            cell.imageView.alpha = 0.05
         } else {
-            cell.imageView.tintImageColor(UIColor.clearColor())
+            cell.imageView.alpha = 1.0
         }
+    }
+    
+    func addPhotoFromFlickrPost(post: FlickrPost) {
+        
+        let photo = Photo(insertIntoMangedObjectContext: sharedContext)
+        guard let url = post.squareURL else {
+            return
+        }
+        
+        Alamofire.request(.GET, url) .responseData { (response) in
+            if let data = response.data {
+                photo.photo = data
+            }
+        }
+        
+        DataController.sharedInstance().saveContext()
+        
     }
 
     /*

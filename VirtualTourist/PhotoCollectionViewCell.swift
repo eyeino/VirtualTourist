@@ -21,7 +21,7 @@ class PhotoCollectionViewCell: UICollectionViewCell {
         }
         
         get {
-            return imageView.image ?? createImageWithColor(UIColor.redColor(), size: CGSize(width: 150, height: 150))
+            return imageView.image ?? createImageWithColor(UIColor.clearColor(), size: CGSize(width: 150, height: 150))
         }
     }
     
@@ -47,16 +47,22 @@ class PhotoCollectionViewCell: UICollectionViewCell {
         
         loadingIndicator.startAnimating()
         
+        let photo = Photo(insertIntoMangedObjectContext: self.sharedContext)
+        
         guard let urlString = flickrPost.squareURL else {
             //if url was somehow not initialized, set the cell to empty
-            self.emptyCell()
+            let placeholder = self.createImageWithColor(UIColor.grayColor(), size: CGSize(width: 150, height: 150))
+            photo.photo = UIImagePNGRepresentation(placeholder)
+            DataController.sharedInstance().saveContext()
             
             return
         }
         
         guard let url = NSURL(string: urlString) else {
             //if url was somehow not initialized, set the cell to empty
-            self.emptyCell()
+            let placeholder = self.createImageWithColor(UIColor.grayColor(), size: CGSize(width: 150, height: 150))
+            photo.photo = UIImagePNGRepresentation(placeholder)
+            DataController.sharedInstance().saveContext()
             
             return
         }
@@ -73,16 +79,15 @@ class PhotoCollectionViewCell: UICollectionViewCell {
                     if let data = response.data {
                         dispatch_async(dispatch_get_main_queue(), {
                             //Deserialize the response data into an image and apply it to the cell
-                            if let image = UIImage(data: data) {
-                                //self.populateCell(image)
-                                self.populateCell(image)
-                                
-                            }
+                            photo.photo = data
+                            DataController.sharedInstance().saveContext()
                         })
                     }
                 case .Failure:
                     dispatch_async(dispatch_get_main_queue(), { 
-                        self.emptyCell()
+                        let placeholder = self.createImageWithColor(UIColor.grayColor(), size: CGSize(width: 150, height: 150))
+                        photo.photo = UIImagePNGRepresentation(placeholder)
+                        DataController.sharedInstance().saveContext()
                         
                     })
                 }
@@ -113,16 +118,6 @@ class PhotoCollectionViewCell: UICollectionViewCell {
         let image: UIImage = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
         return image
-    }
-    
-    func save() {
-        
-        guard let pin = pin else {
-            return
-        }
-        
-        _ = Photo(image: self.photo, pin: pin, context: self.sharedContext!)
-        DataController.sharedInstance().saveContext()
     }
     
 }
