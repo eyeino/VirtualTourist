@@ -316,6 +316,8 @@ extension PhotoCollectionViewController {
             sharedContext.deleteObject(photo)
         }
         
+        DataController.sharedInstance().saveContext()
+        
         selectedIndexes = [NSIndexPath]()
     }
     
@@ -329,6 +331,8 @@ extension PhotoCollectionViewController {
         for photo in photosToDelete {
             sharedContext.deleteObject(photo)
         }
+        
+        DataController.sharedInstance().saveContext()
         
         selectedIndexes = [NSIndexPath]()
     }
