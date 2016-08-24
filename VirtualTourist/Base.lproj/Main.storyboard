@@ -71,6 +71,13 @@
                                             <action selector="refreshCollectionButton:" destination="pSz-sT-ZT4" id="xhW-0d-cQO"/>
                                         </connections>
                                     </barButtonItem>
+                                    <barButtonItem width="42" style="plain" systemItem="fixedSpace" id="KrM-xa-NsH"/>
+                                    <barButtonItem systemItem="trash" id="xo8-j3-KfA">
+                                        <color key="tintColor" red="1" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
+                                        <connections>
+                                            <action selector="trashButtonClicked" destination="pSz-sT-ZT4" id="drT-DP-yDD"/>
+                                        </connections>
+                                    </barButtonItem>
                                 </items>
                             </toolbar>
                             <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleAspectFit" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="aFC-Br-pEx">
@@ -162,6 +169,7 @@
                         <outlet property="refreshCollectionButton" destination="FsV-YC-KUv" id="dP1-oa-tIj"/>
                         <outlet property="refreshingIndicator" destination="M1b-D6-31I" id="106-GX-up7"/>
                         <outlet property="textLabel" destination="ChP-Vi-nYm" id="rgh-oR-8dx"/>
+                        <outlet property="trashButton" destination="xo8-j3-KfA" id="lmY-JH-QAt"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="uvW-Yh-scu" userLabel="First Responder" sceneMemberID="firstResponder"/>

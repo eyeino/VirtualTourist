@@ -23,7 +23,7 @@ class FlickrClient: NSObject {
         return Singleton.sharedInstance
     }
     
-    func getFlickrPages(latitude: Double, longitude: Double, hostViewController: PhotoCollectionViewController) {
+    func getFlickrPages(latitude: Double, longitude: Double, hostViewController: PhotoCollectionViewController, completionHandlerForFlickrPages: (success: Bool, error: NSError?) -> Void) {
         
         print("called getFlickrPages")
         
@@ -56,7 +56,12 @@ class FlickrClient: NSObject {
                             
                             let randomPage = Int(arc4random_uniform(UInt32(pageLimit))) + 1
                             
-                            self.getFlickrPosts(latitude, longitude: longitude, withPageNumber: randomPage, hostViewController: hostViewController)
+                            hostViewController.randomPage = randomPage
+                            hostViewController.numberOfPages = pageLimit
+                            
+                            completionHandlerForFlickrPages(success: true, error: nil)
+                            
+                            //self.getFlickrPosts(latitude, longitude: longitude, withPageNumber: randomPage, hostViewController: hostViewController)
                             
                         } catch {
                             print("Error with parsing JSON. (latlon request)")
@@ -64,6 +69,8 @@ class FlickrClient: NSObject {
                             dispatch_async(dispatch_get_main_queue(), {
                                 hostViewController.indicateLoading(false)
                             })
+                            
+                            completionHandlerForFlickrPages(success: false, error: nil)
                         }
                     }
                 case .Failure:
@@ -71,11 +78,13 @@ class FlickrClient: NSObject {
                     dispatch_async(dispatch_get_main_queue(), {
                         hostViewController.indicateLoading(false)
                     })
+                    
+                    completionHandlerForFlickrPages(success: false, error: response.result.error)
             }
         }
     }
     
-    func getFlickrPosts(latitude: Double, longitude: Double, withPageNumber: Int, hostViewController: PhotoCollectionViewController) {
+    func getFlickrPosts(latitude: Double, longitude: Double, withPageNumber: Int, hostViewController: PhotoCollectionViewController, completionHandlerForFlickrPosts: (success: Bool, error: NSError?) -> Void) {
         
         print("called getFlickrPosts")
         
@@ -108,6 +117,7 @@ class FlickrClient: NSObject {
                             let posts = try json.array(Constants.FlickrResponseKeys.Photos, Constants.FlickrResponseKeys.Photo).map(FlickrPost.init)
                             
                             hostViewController.posts = posts
+                            print("number of posts: \(posts.count)")
                             
                             dispatch_async(dispatch_get_main_queue(), {
                                 
@@ -118,14 +128,16 @@ class FlickrClient: NSObject {
                                 }
                                 
                                 hostViewController.indicateLoading(false)
-                                hostViewController.collectionView.reloadData()
                             })
+                            
+                            completionHandlerForFlickrPosts(success: true, error: nil)
                             
                         } catch {
                             print("Error with parsing JSON. (latlonpage request)")
                             
                             dispatch_async(dispatch_get_main_queue(), {
                                 hostViewController.indicateLoading(false)
+                                completionHandlerForFlickrPosts(success: false, error: response.result.error)
                             })
                         }
                     }

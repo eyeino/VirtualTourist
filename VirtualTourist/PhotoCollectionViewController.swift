@@ -20,6 +20,7 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDataSourc
     @IBOutlet weak var collectionView: UICollectionView!
     @IBOutlet weak var refreshCollectionButton: UIBarButtonItem!
     @IBOutlet weak var refreshingIndicator: UIActivityIndicatorView!
+    @IBOutlet weak var trashButton: UIBarButtonItem!
     
     // The selected indexes array keeps all of the indexPaths for cells that are "selected". The array is
     // used inside cellForItemAtIndexPath to lower the alpha of selected cells.  You can see how the array
@@ -39,6 +40,7 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDataSourc
     
     var numberOfPages: Int?
     var numberOfPhotos: Int?
+    var randomPage: Int?
     
     let reusableIdentifier = "photoCell"
     
@@ -48,6 +50,7 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDataSourc
         super.viewDidLoad()
         
         numberOfPages = nil
+        randomPage = nil
         indicateLoading(true)
         textLabel.hidden = true
         
@@ -64,7 +67,22 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDataSourc
         }
         
         if (fetchedResultsController.fetchedObjects?.count == 0) {
-            FlickrClient.sharedInstance().getFlickrPages(lat, longitude: lon, hostViewController: self)
+            FlickrClient.sharedInstance().getFlickrPages(lat, longitude: lon, hostViewController: self) { success, error in
+                
+                guard let rand = self.randomPage else {
+                    return
+                }
+                
+                FlickrClient.sharedInstance().getFlickrPosts(self.lat, longitude: self.lon, withPageNumber: rand, hostViewController: self, completionHandlerForFlickrPosts: { (success, error) in
+                    
+                    for post in self.posts {
+                        self.addPhotoFromFlickrPost(post)
+                    }
+                })
+            }
+            
+            DataController.sharedInstance().saveContext()
+            
         } else {
             indicateLoading(false)
         }
@@ -84,61 +102,49 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDataSourc
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
         
-        numberOfPages = nil
-        indicateLoading(true)
-        textLabel.hidden = true
-        
-        // Start the fetched results controller
-        var error: NSError?
-        do {
-            try fetchedResultsController.performFetch()
-        } catch let fetchError as NSError {
-            error = fetchError
-        }
-        
-        if let error = error {
-            print("Error performing initial fetch: \(error)")
-        }
-        
-        if (fetchedResultsController.fetchedObjects?.count == 0) {
-            FlickrClient.sharedInstance().getFlickrPages(lat, longitude: lon, hostViewController: self)
-        } else {
-            indicateLoading(false)
-        }
-        
-        //Add single annotation to mapView
-        let annotation = MKPointAnnotation()
-        annotation.coordinate = CLLocationCoordinate2D(latitude: lat, longitude: lon)
-        mapView.addAnnotation(annotation)
-        
-        //Zoom to the annotation
-        let regionRadius: CLLocationDistance = 16000
-        let coordinateRegion = MKCoordinateRegionMakeWithDistance(annotation.coordinate, regionRadius * 2.0, regionRadius * 2.0)
-        mapView.setRegion(coordinateRegion, animated: true)
+        updateTrashButton()
     }
     
     @IBAction func refreshCollectionButton(sender: UIBarButtonItem!) {
+        
         deleteAllPhotos()
         
-        collectionView.scrollToTop()
+        //collectionView.scrollToTop()
         //if numberOfPages was already determined, try to get new photos
         if let pageLimit = numberOfPages {
             
             indicateLoading(true)
             
-            let randomPage = Int(arc4random_uniform(UInt32(pageLimit))) + 1
-            
-            FlickrClient.sharedInstance().getFlickrPosts(lat, longitude: lon, withPageNumber: randomPage, hostViewController: self)
+            self.randomPage = Int(arc4random_uniform(UInt32(pageLimit))) + 1
+                
+            FlickrClient.sharedInstance().getFlickrPosts(self.lat, longitude: self.lon, withPageNumber: self.randomPage!, hostViewController: self, completionHandlerForFlickrPosts: { (success, error) in
+                
+                for post in self.posts {
+                    self.addPhotoFromFlickrPost(post)
+                }
+                DataController.sharedInstance().saveContext()
+            })
         
         //if numberOfPages is nil for whatever reason, try to get a value for it and try to get photos
         } else {
             
-            FlickrClient.sharedInstance().getFlickrPages(lat, longitude: lon, hostViewController: self)
+            FlickrClient.sharedInstance().getFlickrPages(lat, longitude: lon, hostViewController: self) { success, error in
+                
+                guard let rand = self.randomPage else {
+                    return
+                }
+                
+                FlickrClient.sharedInstance().getFlickrPosts(self.lat, longitude: self.lon, withPageNumber: rand, hostViewController: self, completionHandlerForFlickrPosts: { (success, error) in
+                    
+                    for post in self.posts {
+                        self.addPhotoFromFlickrPost(post)
+                    }
+                    DataController.sharedInstance().saveContext()
+                })
+            }
         }
         
-        for post in posts {
-            addPhotoFromFlickrPost(post)
-        }
+        collectionView.scrollToTop()
     }
     
     func indicateLoading(enabled: Bool) {
@@ -178,12 +184,10 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDataSourc
 extension PhotoCollectionViewController {
     
     func numberOfSectionsInCollectionView(collectionView: UICollectionView) -> Int {
-        print("in numberOfSectionsInCollectionView()")
         return self.fetchedResultsController.sections?.count ?? 0
     }
     
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        print("in collectionView(_:numberOfItemsInSection)")
         let sectionInfo = self.fetchedResultsController.sections![section]
         
         print("number Of Cells: \(sectionInfo.numberOfObjects)")
@@ -191,7 +195,6 @@ extension PhotoCollectionViewController {
     }
         
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
-        print("in cell for item at index path")
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier(reusableIdentifier, forIndexPath: indexPath) as! PhotoCollectionViewCell
         
         self.configurePhotoCell(cell, atIndexPath: indexPath)
@@ -212,8 +215,8 @@ extension PhotoCollectionViewController {
         // Then reconfigure the cell
         self.configurePhotoCell(cell, atIndexPath: indexPath)
         
-        // And update the buttom button
-        //updateTrashButton()
+        // And update the trash button
+        updateTrashButton()
     }
  
     
@@ -228,7 +231,6 @@ extension PhotoCollectionViewController {
         deletedIndexPaths = [NSIndexPath]()
         updatedIndexPaths = [NSIndexPath]()
         
-        print("in controllerWillChangeContent")
     }
     
     // The second method may be called multiple times, once for each Color object that is added, deleted, or changed.
@@ -256,7 +258,7 @@ extension PhotoCollectionViewController {
             print("Update an item.")
             // We don't expect Photo instances to change after they are created. But Core Data would
             // notify us of changes if any occured. This can be useful if you want to respond to changes
-            // that come about after data is downloaded. For example, when an images is downloaded from
+            // that come about after data is downloaded. For example, when images are downloaded from
             // Flickr in the Virtual Tourist app
             updatedIndexPaths.append(indexPath!)
             break
@@ -300,13 +302,12 @@ extension PhotoCollectionViewController {
     
     // MARK: - Actions and Helpers
     
-    @IBAction func trashOrRefreshButton() {
-        
-        if selectedIndexes.isEmpty {
-            deleteAllPhotos()
-        } else {
+    @IBAction func trashButtonClicked() {
+        if !selectedIndexes.isEmpty {
             deleteSelectedPhotos()
         }
+        
+        updateTrashButton()
     }
     
     func deleteAllPhotos() {
@@ -314,6 +315,8 @@ extension PhotoCollectionViewController {
         for photo in fetchedResultsController.fetchedObjects as! [Photo] {
             sharedContext.deleteObject(photo)
         }
+        
+        selectedIndexes = [NSIndexPath]()
     }
     
     func deleteSelectedPhotos() {
@@ -331,15 +334,13 @@ extension PhotoCollectionViewController {
     }
     
     func configurePhotoCell(cell: PhotoCollectionViewCell, atIndexPath indexPath: NSIndexPath) {
-        print("in configureCell")
+        
         if let photo = self.fetchedResultsController.objectAtIndexPath(indexPath) as? Photo {
-            if (photo.photo != nil), let data = photo.photo {
-                print("photo is not nil; it exists")
+            if photo.photo != nil, let data = photo.photo {
                 if let image = UIImage(data: data) {
                     cell.photo = image
                 }
-            } else {
-                print("photo DOESNT exist")
+            } else if photo.photo == nil {
                 cell.configure(indexPath, fetchedResultsController: self.fetchedResultsController)
             }
         }
@@ -348,7 +349,7 @@ extension PhotoCollectionViewController {
         // we use the Swift `find` function to see if the indexPath is in the array
     
         if let _ = selectedIndexes.indexOf(indexPath) {
-            cell.imageView.alpha = 0.05
+            cell.imageView.alpha = 0.3
         } else {
             cell.imageView.alpha = 1.0
         }
@@ -362,18 +363,17 @@ extension PhotoCollectionViewController {
         photo.url = post.squareURL
         photo.pin = pin
         
-        DataController.sharedInstance().saveContext()
     }
-
-    /*
-    func updateBottomButton() {
+    
+    func updateTrashButton() {
         if selectedIndexes.count > 0 {
-            bottomButton.title = "Remove Selected Colors"
+            trashButton.tintColor = UIColor.redColor()
+            trashButton.enabled = true
         } else {
-            bottomButton.title = "Clear All"
+            trashButton.tintColor = UIColor.clearColor()
+            trashButton.enabled = false
         }
     }
-    */
 }
 
 //MARK: FlowLayout Configuration

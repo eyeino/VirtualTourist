@@ -84,12 +84,14 @@ class PhotoCollectionViewCell: UICollectionViewCell, NSFetchedResultsControllerD
                             //Deserialize the response data into an image and apply it to the cell
                             photo.photo = data
                             DataController.sharedInstance().saveContext()
+                            self.loadingIndicator.stopAnimating()
                         })
                     }
                 case .Failure:
                     dispatch_async(dispatch_get_main_queue(), {
                         photo.photo = nil
                         DataController.sharedInstance().saveContext()
+                        self.loadingIndicator.stopAnimating()
                         
                     })
                 }
