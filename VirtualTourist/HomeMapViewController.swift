@@ -14,24 +14,24 @@ class HomeMapViewController: UIViewController, UIGestureRecognizerDelegate, MKMa
     
     let managedObjectContext = DataController.sharedInstance().managedObjectContext
     let pinFetch = NSFetchRequest(entityName: "Pin")
-    var fetchedPins: [Pin]?
     
-    var lat: Double = 34.6937
-    var lon: Double = 135.5022
+    var lat: Double = 40.0
+    var lon: Double = 40.0
     
     @IBOutlet weak var mapView: MKMapView!
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        var fetchedPins: [Pin]?
         //Get saved pins and add them to the mapView
         do {
             fetchedPins = try managedObjectContext.executeFetchRequest(pinFetch) as? [Pin]
         } catch {
-            fatalError("Failed to fetch employees: \(error)")
+            fatalError("Failed to fetch pins: \(error)")
         }
         
-        if let pins = fetchedPins {
+        if fetchedPins != nil, let pins = fetchedPins {
             var annotations = [MKPointAnnotation()]
             for pin in pins {
                 guard let lat = pin.lat as? Double, let lon = pin.lon as? Double else {
@@ -45,6 +45,7 @@ class HomeMapViewController: UIViewController, UIGestureRecognizerDelegate, MKMa
             }
             mapView.addAnnotations(annotations)
         }
+        
         
         // Set up gesture recognition for mapView
         let gestureRecognizer = UILongPressGestureRecognizer(target: self, action: #selector(HomeMapViewController.handleTap))
@@ -129,7 +130,7 @@ class HomeMapViewController: UIViewController, UIGestureRecognizerDelegate, MKMa
             let fetchedPins = try moc.executeFetchRequest(fetch) as! [Pin]
             pin = fetchedPins[0]
             
-            print("FOUND PIN: \(pin!)")
+            print("FOUND PIN: \(pin)")
         } catch {
             print("Error fetching pin for lon: \(longitude) and lat: \(latitude)")
         }

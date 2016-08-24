@@ -1,5 +1,5 @@
 //
-//  CoreDataStack.swift
+//  DataController.swift
 //  VirtualTourist
 //
 //  Created by Ian MacFarlane on 8/17/16.
