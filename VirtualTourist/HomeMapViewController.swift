@@ -108,16 +108,33 @@ class HomeMapViewController: UIViewController, UIGestureRecognizerDelegate, MKMa
     override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
         if (segue.identifier == "showPhotoCollectionForLocation") {
             let destinationVC: PhotoCollectionViewController = segue.destinationViewController as! PhotoCollectionViewController
+            let pin = findPinWithCoordinates(lat, longitude: lon)
+            
             destinationVC.lat = lat
             destinationVC.lon = lon
+            destinationVC.pin = pin
             
-            
-            do {
-                try destinationVC.pin = managedObjectContext.executeFetchRequest(pinFetch)[0] as? Pin
-            } catch {
-                print("could not find pin")
-            }
         }
+    }
+    
+    func findPinWithCoordinates(latitude: Double, longitude: Double) -> Pin? {
+        
+        var pin: Pin?
+        let searchParameter = String(latitude) + String(longitude)
+        let fetch = NSFetchRequest(entityName: "Pin")
+        fetch.predicate = NSPredicate(format: "id == %@", searchParameter)
+        
+        let moc = self.managedObjectContext
+        do {
+            let fetchedPins = try moc.executeFetchRequest(fetch) as! [Pin]
+            pin = fetchedPins[0]
+            
+            print("FOUND PIN: \(pin!)")
+        } catch {
+            print("Error fetching pin for lon: \(longitude) and lat: \(latitude)")
+        }
+        
+        return pin
     }
     
 }

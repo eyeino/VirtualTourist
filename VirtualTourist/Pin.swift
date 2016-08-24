@@ -18,6 +18,7 @@ class Pin: NSManagedObject {
             self.init(entity: ent, insertIntoManagedObjectContext: context)
             self.lat = latitude
             self.lon = longitude
+            self.id = String(latitude) + String(longitude)
         } else {
             fatalError("Unable to find Entity (notebook) name.")
         }

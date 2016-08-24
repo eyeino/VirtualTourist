@@ -47,6 +47,10 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDataSourc
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        numberOfPages = nil
+        indicateLoading(true)
+        textLabel.hidden = true
+        
         // Start the fetched results controller
         var error: NSError?
         do {
@@ -58,6 +62,22 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDataSourc
         if let error = error {
             print("Error performing initial fetch: \(error)")
         }
+        
+        if (fetchedResultsController.fetchedObjects?.count == 0) {
+            FlickrClient.sharedInstance().getFlickrPages(lat, longitude: lon, hostViewController: self)
+        } else {
+            indicateLoading(false)
+        }
+        
+        //Add single annotation to mapView
+        let annotation = MKPointAnnotation()
+        annotation.coordinate = CLLocationCoordinate2D(latitude: lat, longitude: lon)
+        mapView.addAnnotation(annotation)
+        
+        //Zoom to the annotation
+        let regionRadius: CLLocationDistance = 16000
+        let coordinateRegion = MKCoordinateRegionMakeWithDistance(annotation.coordinate, regionRadius * 2.0, regionRadius * 2.0)
+        mapView.setRegion(coordinateRegion, animated: true)
  
     }
     
@@ -68,11 +88,24 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDataSourc
         indicateLoading(true)
         textLabel.hidden = true
         
-        if (fetchedResultsController.fetchedObjects?.count == 0) {
-            FlickrClient.sharedInstance().getFlickrPages(lat, longitude: lon, hostViewController: self)
+        // Start the fetched results controller
+        var error: NSError?
+        do {
+            try fetchedResultsController.performFetch()
+        } catch let fetchError as NSError {
+            error = fetchError
         }
         
-        print(fetchedResultsController.fetchedObjects?.count)
+        if let error = error {
+            print("Error performing initial fetch: \(error)")
+        }
+        
+        if (fetchedResultsController.fetchedObjects?.count == 0) {
+            FlickrClient.sharedInstance().getFlickrPages(lat, longitude: lon, hostViewController: self)
+        } else {
+            indicateLoading(false)
+        }
+        
         //Add single annotation to mapView
         let annotation = MKPointAnnotation()
         annotation.coordinate = CLLocationCoordinate2D(latitude: lat, longitude: lon)
@@ -85,6 +118,7 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDataSourc
     }
     
     @IBAction func refreshCollectionButton(sender: UIBarButtonItem!) {
+        deleteAllPhotos()
         
         collectionView.scrollToTop()
         //if numberOfPages was already determined, try to get new photos
@@ -126,6 +160,10 @@ class PhotoCollectionViewController: UIViewController, UICollectionViewDataSourc
     lazy var fetchedResultsController: NSFetchedResultsController = {
         
         let fetchRequest = NSFetchRequest(entityName: "Photo")
+        if let pin = self.pin {
+            fetchRequest.predicate = NSPredicate(format: "pin == %@", pin)
+        }
+        
         fetchRequest.sortDescriptors = []
         
         let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: self.sharedContext, sectionNameKeyPath: nil, cacheName: nil)
@@ -295,9 +333,15 @@ extension PhotoCollectionViewController {
     func configurePhotoCell(cell: PhotoCollectionViewCell, atIndexPath indexPath: NSIndexPath) {
         print("in configureCell")
         if let photo = self.fetchedResultsController.objectAtIndexPath(indexPath) as? Photo {
-            cell.photo = UIImage(data: photo.photo!)!
-        } else {
-            cell.configure(posts[indexPath.row])
+            if (photo.photo != nil), let data = photo.photo {
+                print("photo is not nil; it exists")
+                if let image = UIImage(data: data) {
+                    cell.photo = image
+                }
+            } else {
+                print("photo DOESNT exist")
+                cell.configure(indexPath, fetchedResultsController: self.fetchedResultsController)
+            }
         }
     
         // If the cell is "selected" it's color panel is grayed out
@@ -313,18 +357,12 @@ extension PhotoCollectionViewController {
     func addPhotoFromFlickrPost(post: FlickrPost) {
         
         let photo = Photo(insertIntoMangedObjectContext: sharedContext)
-        guard let url = post.squareURL else {
-            return
-        }
         
-        Alamofire.request(.GET, url) .responseData { (response) in
-            if let data = response.data {
-                photo.photo = data
-            }
-        }
+        photo.photo = nil
+        photo.url = post.squareURL
+        photo.pin = pin
         
         DataController.sharedInstance().saveContext()
-        
     }
 
     /*

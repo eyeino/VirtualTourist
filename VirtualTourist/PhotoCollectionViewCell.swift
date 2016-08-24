@@ -8,20 +8,21 @@
 
 import UIKit
 import Alamofire
+import CoreData
 
 //Custom cell for collectionView
-class PhotoCollectionViewCell: UICollectionViewCell {
+class PhotoCollectionViewCell: UICollectionViewCell, NSFetchedResultsControllerDelegate {
     
     @IBOutlet var imageView: UIImageView!
     @IBOutlet var loadingIndicator: UIActivityIndicatorView!
     
-    var photo: UIImage {
+    var photo: UIImage? {
         set {
             self.imageView.image = newValue
         }
         
         get {
-            return imageView.image ?? createImageWithColor(UIColor.clearColor(), size: CGSize(width: 150, height: 150))
+            return imageView.image
         }
     }
     
@@ -30,11 +31,15 @@ class PhotoCollectionViewCell: UICollectionViewCell {
     var flickrPost: FlickrPost!
     var sharedContext = DataController.sharedInstance().managedObjectContext
     
-    func configure(flickrPost: FlickrPost) {
-        print("in cell configure")
+    func initialize(flickrPost: FlickrPost) {
         self.flickrPost = flickrPost
+        self.imageView.image = nil
+    }
+    
+    func configure(indexPath: NSIndexPath, fetchedResultsController: NSFetchedResultsController) {
+        print("in cell configure")
         reset()
-        loadImage()
+        loadImage(indexPath, fetchedResultsController: fetchedResultsController)
     }
     
     func reset() {
@@ -42,17 +47,16 @@ class PhotoCollectionViewCell: UICollectionViewCell {
         request?.cancel()
     }
     
-    func loadImage() {
+    func loadImage(indexPath: NSIndexPath, fetchedResultsController: NSFetchedResultsController) {
         print("in cell loadImage")
         
         loadingIndicator.startAnimating()
         
-        let photo = Photo(insertIntoMangedObjectContext: self.sharedContext)
+        let photo = fetchedResultsController.objectAtIndexPath(indexPath) as! Photo
         
-        guard let urlString = flickrPost.squareURL else {
+        guard let urlString = photo.url else {
             //if url was somehow not initialized, set the cell to empty
-            let placeholder = self.createImageWithColor(UIColor.grayColor(), size: CGSize(width: 150, height: 150))
-            photo.photo = UIImagePNGRepresentation(placeholder)
+            photo.photo = nil
             DataController.sharedInstance().saveContext()
             
             return
@@ -60,8 +64,7 @@ class PhotoCollectionViewCell: UICollectionViewCell {
         
         guard let url = NSURL(string: urlString) else {
             //if url was somehow not initialized, set the cell to empty
-            let placeholder = self.createImageWithColor(UIColor.grayColor(), size: CGSize(width: 150, height: 150))
-            photo.photo = UIImagePNGRepresentation(placeholder)
+            photo.photo = nil
             DataController.sharedInstance().saveContext()
             
             return
@@ -84,9 +87,8 @@ class PhotoCollectionViewCell: UICollectionViewCell {
                         })
                     }
                 case .Failure:
-                    dispatch_async(dispatch_get_main_queue(), { 
-                        let placeholder = self.createImageWithColor(UIColor.grayColor(), size: CGSize(width: 150, height: 150))
-                        photo.photo = UIImagePNGRepresentation(placeholder)
+                    dispatch_async(dispatch_get_main_queue(), {
+                        photo.photo = nil
                         DataController.sharedInstance().saveContext()
                         
                     })
@@ -108,16 +110,6 @@ class PhotoCollectionViewCell: UICollectionViewCell {
     func emptyCell() {
         loadingIndicator.stopAnimating()
         imageView.image = nil
-    }
-    
-    func createImageWithColor(color: UIColor, size: CGSize) -> UIImage {
-        let rect = CGRectMake(0, 0, size.width, size.height)
-        UIGraphicsBeginImageContextWithOptions(size, false, 0)
-        color.setFill()
-        UIRectFill(rect)
-        let image: UIImage = UIGraphicsGetImageFromCurrentImageContext()
-        UIGraphicsEndImageContext()
-        return image
     }
     
 }
